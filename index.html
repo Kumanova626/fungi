@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mushroom Parts Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a2e1a;
+    --surface: #243324;
+    --card: #2d422d;
+    --accent: #7ec850;
+    --accent2: #f5c842;
+    --accent3: #e05c3a;
+    --text: #e8f5e0;
+    --muted: #8aab7a;
+    --border: #3d5e3d;
+    --success: #56d66b;
+    --error: #e05c3a;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 10% 20%, rgba(126,200,80,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(245,200,66,0.06) 0%, transparent 50%);
+  }
+
+  header {
+    text-align: center;
+    padding: 28px 20px 10px;
+  }
+  header h1 {
+    font-family: 'Luckiest Guy', cursive;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  }
+  header p {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-top: 6px;
+    font-weight: 600;
+  }
+
+  .main-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 24px;
+    padding: 20px;
+    max-width: 1300px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+  }
+
+  /* ── Bulgarian word bank ── */
+  .word-bank {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 18px;
+    padding: 18px 14px;
+    min-width: 160px;
+    max-width: 180px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow);
+  }
+  .word-bank h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .bg-chip {
+    background: linear-gradient(135deg, #3d5e3d, #2d422d);
+    border: 2px dashed var(--accent);
+    border-radius: 10px;
+    padding: 9px 12px;
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--accent);
+    cursor: grab;
+    user-select: none;
+    text-align: center;
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+    touch-action: none;
+  }
+  .bg-chip:hover { transform: scale(1.06); box-shadow: 0 4px 14px rgba(126,200,80,0.3); }
+  .bg-chip.dragging { opacity: 0.35; cursor: grabbing; }
+  .bg-chip.used { opacity: 0.3; pointer-events: none; border-color: var(--muted); color: var(--muted); }
+
+  /* ── Quiz area ── */
+  .quiz-area {
+    flex: 1 1 600px;
+    position: relative;
+  }
+
+  .mushroom-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+
+  .mushroom-wrapper svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 8px 32px rgba(0,0,0,0.5));
+  }
+
+  /* ── Answer rows ── */
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .answer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 14px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .answer-row.correct {
+    border-color: var(--success);
+    background: rgba(86,214,107,0.08);
+  }
+  .answer-row.wrong {
+    border-color: var(--error);
+    background: rgba(224,92,58,0.08);
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .row-num {
+    font-family: 'Luckiest Guy', cursive;
+    font-size: 1.3rem;
+    color: var(--accent2);
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .input-en {
+    flex: 1;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-en::placeholder { color: var(--muted); font-weight: 600; }
+  .input-en:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(126,200,80,0.18); }
+
+  .drop-zone {
+    flex: 1;
+    min-height: 38px;
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    transition: border-color 0.2s, background 0.2s;
+    padding: 4px 8px;
+    text-align: center;
+    cursor: default;
+  }
+  .drop-zone.over {
+    border-color: var(--accent);
+    background: rgba(126,200,80,0.1);
+    color: var(--accent);
+  }
+  .drop-zone.filled {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(245,200,66,0.08);
+    cursor: pointer;
+  }
+
+  .status-icon {
+    font-size: 1.3rem;
+    min-width: 28px;
+    text-align: center;
+  }
+
+  /* ── Error toast ── */
+  #toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--error);
+    color: #fff;
+    font-weight: 800;
+    padding: 12px 28px;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    box-shadow: 0 6px 24px rgba(224,92,58,0.5);
+    z-index: 1000;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Buttons ── */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 22px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 11px 28px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.3); }
+  .btn-check {
+    background: linear-gradient(135deg, var(--accent), #5aad2e);
+    color: #1a2e1a;
+  }
+  .btn-reset {
+    background: var(--card);
+    color: var(--muted);
+    border: 2px solid var(--border);
+  }
+  .btn-reveal {
+    background: linear-gradient(135deg, var(--accent2), #d4a820);
+    color: #1a2e1a;
+  }
+
+  /* ── Score banner ── */
+  #score-banner {
+    display: none;
+    text-align: center;
+    margin-top: 18px;
+    padding: 18px 24px;
+    background: var(--card);
+    border: 2px solid var(--accent);
+    border-radius: 18px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  #score-banner span { color: var(--accent2); font-size: 1.5rem; }
+
+  /* ── Leader line dots on SVG ── */
+  .dot-label {
+    font-family: 'Luckiest Guy', cursive;
+    font-size: 15px;
+  }
+
+  /* Responsive */
+  @media (max-width: 680px) {
+    .word-bank { max-width: 100%; min-width: unset; width: 100%; display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; }
+    .word-bank h3 { width: 100%; }
+    .bg-chip { margin-bottom: 0; flex: 1 1 calc(50% - 4px); }
+    .answer-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍄 Mushroom Parts Quiz</h1>
+  <p>Type the English name — drag the Bulgarian word to its matching field</p>
+</header>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<div class="main-container">
+
+  <!-- Word bank (Bulgarian) -->
+  <div class="word-bank" id="word-bank">
+    <h3>🇧🇬 Термини</h3>
+    <!-- chips injected by JS -->
+  </div>
+
+  <!-- Main quiz area -->
+  <div class="quiz-area">
+    <div class="mushroom-wrapper">
+      <!-- SVG Mushroom Diagram -->
+      <svg viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="capGrad" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#c0522a"/>
+            <stop offset="60%" stop-color="#8b3010"/>
+            <stop offset="100%" stop-color="#5e1e06"/>
+          </radialGradient>
+          <radialGradient id="spotGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#f5e0c0"/>
+            <stop offset="100%" stop-color="#d4b896"/>
+          </radialGradient>
+          <radialGradient id="gillGrad" cx="50%" cy="0%" r="100%">
+            <stop offset="0%" stop-color="#f5d5a0"/>
+            <stop offset="100%" stop-color="#c49a60"/>
+          </radialGradient>
+          <linearGradient id="stemGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#c8a86a"/>
+            <stop offset="50%" stop-color="#f0d090"/>
+            <stop offset="100%" stop-color="#b8983a"/>
+          </linearGradient>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e8d090"/>
+            <stop offset="100%" stop-color="#a87e40"/>
+          </linearGradient>
+          <linearGradient id="volvaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#b8a06a"/>
+            <stop offset="100%" stop-color="#7a5c28"/>
+          </linearGradient>
+          <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#243324"/>
+            <stop offset="100%" stop-color="#1a2e1a"/>
+          </linearGradient>
+          <!-- soil texture -->
+          <pattern id="soilPat" x="0" y="0" width="20" height="10" patternUnits="userSpaceOnUse">
+            <rect width="20" height="10" fill="#2e1e10"/>
+            <circle cx="5" cy="5" r="1.5" fill="#3e2a14"/>
+            <circle cx="13" cy="3" r="1" fill="#4e3418"/>
+          </pattern>
+          <filter id="softBlur"><feGaussianBlur stdDeviation="1.2"/></filter>
+        </defs>
+
+        <!-- Background -->
+        <rect width="560" height="560" fill="url(#bgGrad)" rx="20"/>
+
+        <!-- Soil layer -->
+        <ellipse cx="280" cy="440" rx="160" ry="22" fill="url(#soilPat)" opacity="0.9"/>
+        <rect x="120" y="430" width="320" height="50" fill="url(#soilPat)" rx="4"/>
+        <ellipse cx="280" cy="480" rx="155" ry="18" fill="#2e1e10" opacity="0.5"/>
+
+        <!-- Mycelium threads (underground) -->
+        <g stroke="#c8a040" stroke-width="1.4" fill="none" opacity="0.75">
+          <path d="M220 445 Q190 455 160 452 Q140 450 130 460"/>
+          <path d="M240 450 Q220 465 200 470 Q185 475 170 485"/>
+          <path d="M265 452 Q260 468 255 478 Q248 490 245 500"/>
+          <path d="M285 450 Q285 468 285 480 Q285 492 282 504"/>
+          <path d="M305 452 Q310 465 318 474 Q328 488 330 498"/>
+          <path d="M330 448 Q348 460 360 468 Q378 478 385 488"/>
+          <path d="M345 443 Q368 450 385 448 Q405 444 418 452"/>
+          <!-- secondary branches -->
+          <path d="M175 460 Q165 468 158 475"/>
+          <path d="M190 472 Q182 480 178 490"/>
+          <path d="M245 500 Q240 510 242 520"/>
+          <path d="M282 504 Q280 514 278 524"/>
+          <path d="M330 498 Q335 508 334 520"/>
+          <path d="M375 485 Q380 495 378 505"/>
+          <path d="M405 448 Q415 458 418 468"/>
+        </g>
+
+        <!-- Stem (stalk) -->
+        <path d="M238 420 Q232 370 235 320 Q238 290 248 275 Q258 265 280 264 Q302 265 312 275 Q322 290 325 320 Q328 370 322 420 Z"
+              fill="url(#stemGrad)" stroke="#a07830" stroke-width="1.5"/>
+        <!-- stem shading -->
+        <path d="M248 420 Q244 370 246 320 Q249 294 255 280" fill="none" stroke="#e8d090" stroke-width="3" opacity="0.4" stroke-linecap="round"/>
+        <path d="M315 420 Q318 370 316 320 Q313 294 307 280" fill="none" stroke="#7a5820" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+
+        <!-- Volva (cup at base) -->
+        <ellipse cx="280" cy="432" rx="62" ry="18" fill="url(#volvaGrad)" stroke="#6a4820" stroke-width="1.5"/>
+        <path d="M218 432 Q218 450 230 456 Q255 464 280 464 Q305 464 330 456 Q342 450 342 432"
+              fill="url(#volvaGrad)" stroke="#6a4820" stroke-width="1.5"/>
+        <!-- volva rim highlight -->
+        <path d="M222 430 Q250 440 280 440 Q310 440 338 430" fill="none" stroke="#c8a060" stroke-width="1.5" opacity="0.6"/>
+
+        <!-- Ring (annulus) -->
+        <ellipse cx="280" cy="318" rx="52" ry="12" fill="url(#ringGrad)" stroke="#a07030" stroke-width="1.5"/>
+        <path d="M228 318 Q228 330 240 336 Q260 344 280 344 Q300 344 320 336 Q332 330 332 318"
+              fill="url(#ringGrad)" stroke="#a07030" stroke-width="1.2" opacity="0.8"/>
+        <!-- ring droop detail -->
+        <path d="M230 322 Q256 332 280 332 Q304 332 330 322" fill="none" stroke="#e8d090" stroke-width="1" opacity="0.5"/>
+
+        <!-- Gills (under cap) -->
+        <clipPath id="gillClip">
+          <path d="M130 275 Q160 290 190 292 Q235 295 280 295 Q325 295 370 292 Q400 290 430 275 Q410 280 280 282 Q150 280 130 275Z"/>
+        </clipPath>
+        <g clip-path="url(#gillClip)">
+          <path d="M145 276 L225 293" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M158 274 L240 292" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M172 273 L255 292" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M186 272 L268 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M202 271 L280 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M218 271 L292 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M235 270 L306 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M252 270 L318 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M268 270 L330 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M285 270 L344 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M300 271 L356 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M315 271 L368 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M330 272 L380 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M346 273 L392 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M360 274 L406 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+          <path d="M374 276 L418 291" stroke="#c49a60" stroke-width="1.2" fill="none"/>
+        </g>
+        <!-- Gill underside fill -->
+        <path d="M130 275 Q160 290 190 292 Q235 295 280 295 Q325 295 370 292 Q400 290 430 275 Q410 282 280 284 Q150 282 130 275Z"
+              fill="url(#gillGrad)" opacity="0.85"/>
+
+        <!-- Cap (pileus) -->
+        <path d="M130 275 Q110 230 115 185 Q125 130 165 100 Q205 72 250 68 Q280 65 310 68 Q355 72 395 100 Q435 130 445 185 Q450 230 430 275 Q400 268 350 270 Q320 272 280 272 Q240 272 210 270 Q160 268 130 275Z"
+              fill="url(#capGrad)" stroke="#5e1e06" stroke-width="1.5"/>
+        <!-- Cap highlight -->
+        <ellipse cx="248" cy="130" rx="60" ry="38" fill="#e06030" opacity="0.2" filter="url(#softBlur)"/>
+        <!-- Cap spots (Amanita style) -->
+        <ellipse cx="220" cy="140" rx="16" ry="11" fill="url(#spotGrad)" opacity="0.85"/>
+        <ellipse cx="280" cy="108" rx="14" ry="10" fill="url(#spotGrad)" opacity="0.85"/>
+        <ellipse cx="340" cy="145" rx="15" ry="10" fill="url(#spotGrad)" opacity="0.85"/>
+        <ellipse cx="260" cy="175" rx="10" ry="7" fill="url(#spotGrad)" opacity="0.7"/>
+        <ellipse cx="310" cy="185" rx="9" ry="6" fill="url(#spotGrad)" opacity="0.7"/>
+        <ellipse cx="185" cy="190" rx="9" ry="6" fill="url(#spotGrad)" opacity="0.65"/>
+        <ellipse cx="366" cy="195" rx="8" ry="5" fill="url(#spotGrad)" opacity="0.65"/>
+
+        <!-- Leader lines + numbered circles -->
+        <!-- 1: Cap -->
+        <line x1="175" y1="115" x2="82" y2="90" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>
+        <circle cx="72" cy="86" r="14" fill="#2d422d" stroke="#f5c842" stroke-width="2"/>
+        <text x="72" y="91" text-anchor="middle" class="dot-label" fill="#f5c842">1</text>
+
+        <!-- 2: Gills -->
+        <line x1="195" y1="283" x2="82" y2="295" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>
+        <circle cx="72" cy="295" r="14" fill="#2d422d" stroke="#f5c842" stroke-width="2"/>
+        <text x="72" y="300" text-anchor="middle" class="dot-label" fill="#f5c842">2</text>
+
+        <!-- 3: Stem/Stalk -->
+        <line x1="240" y1="360" x2="82" y2="380" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>
+        <circle cx="72" cy="380" r="14" fill="#2d422d" stroke="#f5c842" stroke-width="2"/>
+        <text x="72" y="385" text-anchor="middle" class="dot-label" fill="#f5c842">3</text>
+
+        <!-- 4: Ring -->
+        <line x1="332" y1="320" x2="460" y2="295" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>
+        <circle cx="470" cy="292" r="14" fill="#2d422d" stroke="#f5c842" stroke-width="2"/>
+        <text x="470" y="297" text-anchor="middle" class="dot-label" fill="#f5c842">4</text>
+
+        <!-- 5: Volva -->
+        <line x1="342" y1="456" x2="460" y2="455" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>
+        <circle cx="470" cy="455" r="14" fill="#2d422d" stroke="#f5c842" stroke-width="2"/>
+        <text x="470" y="460" text-anchor="middle" class="dot-label" fill="#f5c842">5</text>
+
+        <!-- 6: Mycelium -->
+        <line x1="350" y1="480" x2="460" y2="510" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>
+        <circle cx="470" cy="513" r="14" fill="#2d422d" stroke="#f5c842" stroke-width="2"/>
+        <text x="470" y="518" text-anchor="middle" class="dot-label" fill="#f5c842">6</text>
+
+        <!-- 7: Hyphae -->
+        <line x1="178" y1="480" x2="82" y2="510" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>
+        <circle cx="72" cy="513" r="14" fill="#2d422d" stroke="#f5c842" stroke-width="2"/>
+        <text x="72" y="518" text-anchor="middle" class="dot-label" fill="#f5c842">7</text>
+      </svg>
+    </div>
+
+    <!-- Answer grid -->
+    <div class="answers-grid" id="answers-grid">
+      <!-- rows injected by JS -->
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-check" onclick="checkAll()">✔ Check Answers</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+    </div>
+
+    <div id="score-banner"></div>
+  </div>
+</div>
+
+<script>
+const PARTS = [
+  { id: 1, en: 'cap',      bg: 'Шапка'   },
+  { id: 2, en: 'gills',   bg: 'Ламели'  },
+  { id: 3, en: 'stem',    bg: 'Стъбло'  },
+  { id: 4, en: 'ring',    bg: 'Пръстен' },
+  { id: 5, en: 'volva',   bg: 'Було/Волва'},
+  { id: 6, en: 'mycelium',bg: 'Мицел'   },
+  { id: 7, en: 'hyphae',  bg: 'Хифи'    },
+];
+
+// acceptable answers (lowercase)
+const ACCEPTED = {
+  1: ['cap'],
+  2: ['gills', 'gill'],
+  3: ['stem', 'stalk', 'stem/stalk', 'stalk/stem'],
+  4: ['ring', 'annulus'],
+  5: ['volva'],
+  6: ['mycelium'],
+  7: ['hyphae', 'hypha'],
+};
+
+let draggedBg = null; // { partId, chipEl }
+let dropState = {}; // partId -> bgText or null
+
+// ── Build word bank ──
+function buildWordBank() {
+  const wb = document.getElementById('word-bank');
+  Array.from(wb.querySelectorAll('.bg-chip')).forEach(el => el.remove());
+
+  const shuffled = [...PARTS].sort(() => Math.random() - 0.5);
+  shuffled.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'bg-chip';
+    chip.textContent = p.bg;
+    chip.dataset.partId = p.id;
+    chip.draggable = true;
+
+    chip.addEventListener('dragstart', e => {
+      draggedBg = { partId: p.id, chipEl: chip, text: p.bg };
+      chip.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+
+    // Touch support
+    chip.addEventListener('touchstart', touchStart, { passive: true });
+    chip.addEventListener('touchmove',  touchMove,  { passive: false });
+    chip.addEventListener('touchend',   touchEnd,   { passive: true });
+
+    wb.appendChild(chip);
+  });
+}
+
+// ── Build answer rows ──
+function buildRows() {
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  dropState = {};
+
+  PARTS.forEach(p => {
+    dropState[p.id] = null;
+    const row = document.createElement('div');
+    row.className = 'answer-row';
+    row.dataset.partId = p.id;
+    row.innerHTML = `
+      <span class="row-num">${p.id}</span>
+      <input class="input-en" type="text"
+             placeholder="Type English name…"
+             data-part="${p.id}"
+             autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <div class="drop-zone" data-part="${p.id}">Drop Bulgarian</div>
+      <span class="status-icon" data-status="${p.id}"></span>
+    `;
+    grid.appendChild(row);
+  });
+
+  // Drag-over / drop on drop zones
+  grid.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('over');
+      if (!draggedBg) return;
+      handleBgDrop(zone, draggedBg);
+      draggedBg = null;
+    });
+  });
+
+  // Enter key submits
+  grid.querySelectorAll('.input-en').forEach(inp => {
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') checkAll(); });
+  });
+}
+
+function handleBgDrop(zone, drag) {
+  const targetId = parseInt(zone.dataset.part);
+  const srcId    = parseInt(drag.partId);
+
+  // If another chip was here, return it to bank
+  const prevBgId = dropState[targetId];
+  if (prevBgId !== null) returnChipToBank(prevBgId);
+
+  // If the dragged chip was already in a different zone, clear that zone
+  Object.keys(dropState).forEach(pid => {
+    if (dropState[pid] === srcId && parseInt(pid) !== targetId) {
+      dropState[pid] = null;
+      const oldZone = document.querySelector(`.drop-zone[data-part="${pid}"]`);
+      if (oldZone) { oldZone.textContent = 'Drop Bulgarian'; oldZone.classList.remove('filled'); }
+    }
+  });
+
+  dropState[targetId] = srcId;
+  zone.textContent = drag.text;
+  zone.classList.add('filled');
+  drag.chipEl.classList.add('used');
+
+  // Click filled zone to remove
+  zone.onclick = () => {
+    returnChipToBank(srcId);
+    dropState[targetId] = null;
+    zone.textContent = 'Drop Bulgarian';
+    zone.classList.remove('filled');
+    zone.onclick = null;
+  };
+}
+
+function returnChipToBank(chipPartId) {
+  const chip = document.querySelector(`.bg-chip[data-part-id="${chipPartId}"]`);
+  if (chip) chip.classList.remove('used');
+}
+
+// ── Touch drag ──
+let touchChip = null, touchGhost = null;
+
+function touchStart(e) {
+  const chip = e.currentTarget;
+  touchChip = chip;
+  const touch = e.touches[0];
+  // ghost
+  touchGhost = chip.cloneNode(true);
+  touchGhost.style.cssText = `position:fixed;z-index:9999;opacity:0.85;pointer-events:none;width:${chip.offsetWidth}px;top:${touch.clientY - chip.offsetHeight/2}px;left:${touch.clientX - chip.offsetWidth/2}px;`;
+  document.body.appendChild(touchGhost);
+  chip.classList.add('dragging');
+}
+
+function touchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  if (touchGhost) {
+    touchGhost.style.top  = `${touch.clientY - touchGhost.offsetHeight/2}px`;
+    touchGhost.style.left = `${touch.clientX - touchGhost.offsetWidth/2}px`;
+  }
+}
+
+function touchEnd(e) {
+  if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+  if (!touchChip) return;
+  touchChip.classList.remove('dragging');
+  const touch = e.changedTouches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const zone = el ? el.closest('.drop-zone') : null;
+  if (zone) {
+    const partId = parseInt(touchChip.dataset.partId);
+    const part = PARTS.find(p => p.id === partId);
+    handleBgDrop(zone, { partId, chipEl: touchChip, text: part.bg });
+  }
+  touchChip = null;
+}
+
+// ── Validation ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function checkAll() {
+  let correct = 0, total = PARTS.length;
+
+  PARTS.forEach(p => {
+    const row  = document.querySelector(`.answer-row[data-part-id="${p.id}"]`);
+    const inp  = document.querySelector(`.input-en[data-part="${p.id}"]`);
+    const zone = document.querySelector(`.drop-zone[data-part="${p.id}"]`);
+    const icon = document.querySelector(`[data-status="${p.id}"]`);
+
+    const enVal = inp.value.trim().toLowerCase();
+    const bgVal = dropState[p.id]; // partId of dragged chip or null
+
+    const enOk = ACCEPTED[p.id].includes(enVal);
+    const bgOk = bgVal === p.id; // correct chip dropped
+
+    // remove previous state
+    row.classList.remove('correct', 'wrong');
+
+    if (!enVal && bgVal === null) {
+      icon.textContent = '';
+      return; // skip empty rows silently
+    }
+
+    const bothOk = enOk && bgOk;
+    const neitherGiven = !enVal && bgVal === null;
+
+    if (bothOk) {
+      row.classList.add('correct');
+      icon.textContent = '✅';
+      correct++;
+      inp.disabled = true;
+    } else {
+      row.classList.add('wrong');
+      icon.textContent = '❌';
+
+      const msgs = [];
+      if (enVal && !enOk) msgs.push(`"${inp.value.trim()}" is not correct for part #${p.id}`);
+      if (bgVal !== null && !bgOk) msgs.push(`Wrong Bulgarian term in field #${p.id}`);
+      if (!enVal) msgs.push(`Please type the English name for part #${p.id}`);
+      if (bgVal === null) msgs.push(`Please drag a Bulgarian term to field #${p.id}`);
+      if (msgs.length) showToast(msgs[0]);
+    }
+  });
+
+  // Check if all answered
+  const allAnswered = PARTS.every(p => {
+    const inp = document.querySelector(`.input-en[data-part="${p.id}"]`);
+    return inp.disabled || (inp.value.trim() !== '' && dropState[p.id] !== null);
+  });
+
+  if (correct === total) {
+    showScore(correct, total);
+  }
+}
+
+function showScore(c, t) {
+  const banner = document.getElementById('score-banner');
+  banner.style.display = 'block';
+  if (c === t) {
+    banner.innerHTML = `🎉 Perfect score! <span>${c}/${t}</span> — You know all the mushroom parts!`;
+  } else {
+    banner.innerHTML = `Good effort! Score: <span>${c}/${t}</span> — Keep practising!`;
+  }
+}
+
+function revealAll() {
+  PARTS.forEach(p => {
+    const inp  = document.querySelector(`.input-en[data-part="${p.id}"]`);
+    const zone = document.querySelector(`.drop-zone[data-part="${p.id}"]`);
+    const icon = document.querySelector(`[data-status="${p.id}"]`);
+    const row  = document.querySelector(`.answer-row[data-part-id="${p.id}"]`);
+
+    inp.value = p.en;
+    inp.disabled = false;
+
+    // Place correct Bulgarian chip
+    const chip = document.querySelector(`.bg-chip[data-part-id="${p.id}"]`);
+    if (chip) {
+      // If the zone has a wrong chip, return it
+      if (dropState[p.id] !== null && dropState[p.id] !== p.id) {
+        returnChipToBank(dropState[p.id]);
+      }
+      dropState[p.id] = p.id;
+      zone.textContent = p.bg;
+      zone.classList.add('filled');
+      chip.classList.add('used');
+    }
+    row.classList.remove('wrong');
+    row.classList.add('correct');
+    icon.textContent = '✅';
+  });
+  showScore(PARTS.length, PARTS.length);
+}
+
+function resetAll() {
+  buildWordBank();
+  buildRows();
+  document.getElementById('score-banner').style.display = 'none';
+}
+
+// ── Init ──
+buildWordBank();
+buildRows();
+</script>
+</body>
+</html>
